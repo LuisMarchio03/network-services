@@ -22,6 +22,10 @@
    - DHCP: Protocolo de Configuração Dinâmica de Host.
    - DNS: Sistema de Nomes de Domínio.
    - NTP: Protocolo de Tempo de Rede.
+   - Servidor de Proxy: Para controlar e filtrar o tráfego de internet na rede.
+   - Servidor de VPN (Virtual Private Network): Para permitir o acesso remoto seguro à rede interna.
+   - Servidor de Aplicação: Para hospedar e executar aplicativos corporativos ou web.
+   - Servidor de Backup: Para realizar backups regulares dos dados importantes armazenados na rede.
 
 6. **Ferramentas de Gerenciamento de Rede:**
    - SNMP: Simple Network Management Protocol.
