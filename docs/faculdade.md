@@ -46,3 +46,7 @@ O projeto "NetConnect Enterprise" promove a inclusão e a diversidade, oferecend
 ## Internet das Coisas (IoT)
 A IoT desempenha um papel crucial no projeto "NetConnect Enterprise", permitindo a integração de dispositivos inteligentes para monitoramento, automação e análise de dados. Isso inclui sensores de ambiente, dispositivos de segurança, sistemas de automação e muito mais, criando um ambiente de trabalho conectado e eficiente.
 
+## Segurança: 
+
+Câmeras de segurança e sensores de movimento podem ser integrados à rede para monitorar áreas sensíveis e detectar atividades suspeitas em tempo real.
+
