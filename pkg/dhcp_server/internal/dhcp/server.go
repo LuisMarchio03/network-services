@@ -112,10 +112,15 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 	}
 
 	// Converte o endereço IP de string para o formato de bytes IPv4
-	ip := net.ParseIP(availableIP).To4()
+ip := net.ParseIP(availableIP).To4()
+if ip == nil {
+    logger.Error("Erro ao converter o endereço IP para formato IPv4")
+    return nil
+}
 
-	// Inclui o endereço IP na oferta DHCP (bytes 16 a 19 do pacote DHCP)
-	copy(offer[16:20], ip)
+// Inclui o endereço IP na oferta DHCP (mínimo entre o tamanho do IP e o tamanho disponível na oferta)
+copy(offer[16:16+len(ip)], ip)
+
 
 	return offer
 }
