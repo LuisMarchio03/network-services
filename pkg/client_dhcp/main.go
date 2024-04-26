@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	conn, err := net.Dial("udp", "localhost:1067")
+	conn, err := net.Dial("udp", "localhost:67")
 	if err != nil {
 		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
 		return

@@ -48,7 +48,7 @@ func connectToMongoDB() (*mongodb.MongoDB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	uri := "mongodb://localhost:27017"
+	uri := "mongodb://root:example@localhost:27017"
 	dbName := "dhcp"
 	collectionName := "ip_addresses"
 
