@@ -42,21 +42,12 @@ func (db *MongoDB) Close(ctx context.Context) {
 
 // InsertIP insere um novo registro de endereço IP no MongoDB
 func (db *MongoDB) InsertIP(ctx context.Context, ip string, assigned bool) error {
-	_, err := db.Collection.InsertOne(ctx, schemas.IPRecord{IPAddress: ip, Assigned: assigned})
+	_, err := db.Collection.InsertOne(ctx, bson.M{"ip_address": ip, "assigned": assigned})
 	return err
 }
 
 // FindAvailableIP busca no MongoDB por um endereço IP disponível que ainda não foi atribuído.
-// Funcionamento Geral:
-// A função procura no banco de dados MongoDB por um documento que tenha o campo assigned com valor false,
-// indicando que o endereço IP correspondente não foi atribuído a nenhum cliente.
-//
-// Parâmetros:
-// ctx context.Context: O contexto da execução, usado para controlar o tempo de execução e o cancelamento de operações.
-//
-// Retorno:
-// string: O endereço IP encontrado.
-// error: Qualquer erro que ocorra durante a execução da consulta.
+// Retorna o endereço IP encontrado ou um erro se não houver IPs disponíveis.
 func (db *MongoDB) FindAvailableIP(ctx context.Context) (string, error) {
 	var ip schemas.IPRecord
 	err := db.Collection.FindOne(ctx, bson.M{"assigned": false}).Decode(&ip)
