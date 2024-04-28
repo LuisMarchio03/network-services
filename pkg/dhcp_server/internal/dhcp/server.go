@@ -92,13 +92,23 @@ func (s *Server) processDHCPMessage(request []byte, addr net.Addr) {
 			s.conn.WriteTo(ack, addr)
 		} else {
 			// Construir e enviar uma mensagem DHCP NAK (Not Acknowledge)
-			nak := s.buildDHCPNak(request)
-			s.conn.WriteTo(nak, addr)
+			reason := "Endereço IP solicitado não disponível"
+			nak := s.buildDHCPNak(request, reason)
+			if nak != nil {
+				s.conn.WriteTo(nak, addr)
+			}
 		}
 	}
 }
 
 // isIPAvailable verifica se o endereço IP especificado está disponível para concessão.
+// Esta função consulta o banco de dados para determinar se o endereço IP fornecido está atualmente disponível para ser atribuído a um cliente DHCP.
+//
+// Parâmetros:
+//   - ip: O endereço IP a ser verificado quanto à disponibilidade.
+//
+// Retorna:
+//   - Um valor booleano indicando se o endereço IP está disponível (true) ou já está atribuído (false).
 func (s *Server) isIPAvailable(ip string) bool {
 	// Buscar ctx
 	ctx := s.ctx
@@ -155,6 +165,15 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 }
 
 // buildDHCPAck constrói uma mensagem DHCP Acknowledge (ACK) em resposta a uma solicitação DHCP Request.
+// Esta função cria uma mensagem de ACK DHCP que confirma a concessão de um endereço IP solicitado.
+//
+// Parâmetros:
+//   - request: O pacote DHCP Request recebido do cliente.
+//   - ip: O endereço IP que está sendo oferecido e confirmado pela mensagem ACK.
+//
+// Retorna:
+//   - Um pacote DHCP Acknowledge (ACK) pronto para ser enviado ao cliente.
+//   - Se ocorrer um erro ao construir o pacote, retorna nil.
 func (s *Server) buildDHCPAck(request []byte, ip string) []byte {
 	// Verifica se a solicitação DHCP possui o tamanho mínimo esperado
 	if len(request) < 236 {
@@ -200,10 +219,38 @@ func (s *Server) buildDHCPAck(request []byte, ip string) []byte {
 }
 
 // buildDHCPNak constrói uma mensagem DHCP Not Acknowledge (NAK) em resposta a uma solicitação DHCP Request.
-func (s *Server) buildDHCPNak(request []byte) []byte {
-	// Constrói a mensagem DHCP NAK
+// Esta função cria uma mensagem NAK DHCP para indicar que a solicitação DHCP recebida não foi reconhecida ou não pode ser atendida.
+//
+// Parâmetros:
+//   - request: O pacote DHCP Request recebido do cliente.
+//
+// Retorna:
+//   - Um pacote DHCP Not Acknowledge (NAK) pronto para ser enviado ao cliente.
+func (s *Server) buildDHCPNak(request []byte, reason string) []byte {
+	// Verifica se a solicitação DHCP possui o tamanho mínimo esperado
+	if len(request) < 236 {
+		logger.Info("Solicitação DHCP inválida: tamanho insuficiente")
+		return nil
+	}
+
+	// Cria um buffer para armazenar a mensagem DHCP NAK
 	nak := make([]byte, 20) // Tamanho mínimo para uma mensagem DHCP NAK
 	nak[0] = 6              // Define o tipo de mensagem como DHCP NAK
+
+	// Adiciona informações opcionais ao NAK
+	nak[1] = request[1] // Copia o tipo de hardware da solicitação DHCP original
+
+	// Adiciona o motivo do NAK (opcional)
+	reasonBytes := []byte(reason)
+	copy(nak[2:], reasonBytes)
+
+	// Preenche o restante da mensagem NAK com zeros (opções adicionais)
+	for i := 20; i < len(nak); i++ {
+		nak[i] = 0
+	}
+
+	// Registra o NAK detalhado no sistema de logging
+	logger.Info("Construído DHCP NAK em resposta à solicitação DHCP: ")
 
 	return nak
 }
