@@ -2,6 +2,7 @@ package dhcp
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"net"
 
@@ -155,11 +156,46 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 
 // buildDHCPAck constrói uma mensagem DHCP Acknowledge (ACK) em resposta a uma solicitação DHCP Request.
 func (s *Server) buildDHCPAck(request []byte, ip string) []byte {
-	// Constrói a mensagem DHCP ACK
-	ack := make([]byte, 20) // Tamanho mínimo para uma mensagem DHCP ACK
-	ack[0] = 5              // Define o tipo de mensagem como DHCP ACK
+	// Verifica se a solicitação DHCP possui o tamanho mínimo esperado
+	if len(request) < 236 {
+		logger.Info("Solicitação DHCP inválida: tamanho insuficiente")
+		return nil
+	}
+
+	// Cria um buffer para armazenar a mensagem DHCP ACK
+	ack := make([]byte, 312) // Tamanho mínimo para uma mensagem DHCP ACK com opções adicionais
+
+	// Tipo de mensagem DHCP: ACK (5)
+	ack[0] = 5
+
+	// Copia o tipo de hardware (exemplo: Ethernet) da solicitação DHCP original
+	ack[1] = request[1]
+
+	// Copia o endereço MAC do cliente (opção 50) para a mensagem ACK
+	copy(ack[28:34], request[28:34])
+
+	// Copia o endereço IP oferecido para a mensagem ACK
 	copy(ack[16:20], net.ParseIP(ip).To4())
 
+	// Preenche o restante da mensagem ACK com zeros (opções adicionais)
+	for i := 240; i < len(ack); i++ {
+		ack[i] = 0
+	}
+
+	// Adiciona outras opções DHCP conforme necessário
+	// Por exemplo, configurando a opção de servidor DHCP (opção 54) com o endereço IP do servidor
+	ack[240] = 54                                        // Código da opção DHCP Server Identifier
+	ack[241] = 4                                         // Tamanho da opção DHCP Server Identifier (4 bytes)
+	copy(ack[242:246], net.ParseIP("192.168.1.1").To4()) // Endereço IP do servidor DHCP
+
+	// Aqui você pode adicionar outras opções DHCP conforme necessário
+	// Por exemplo, configurar o tempo de locação do endereço IP (opção 51)
+	ack[246] = 51                                       // Código da opção DHCP Lease Time
+	ack[247] = 4                                        // Tamanho da opção DHCP Lease Time (4 bytes)
+	leaseTime := uint32(86400)                          // Exemplo: 1 dia (em segundos)
+	binary.BigEndian.PutUint32(ack[248:252], leaseTime) // Tempo de locação do endereço IP
+
+	// Retorne a mensagem DHCP ACK gerada
 	return ack
 }
 

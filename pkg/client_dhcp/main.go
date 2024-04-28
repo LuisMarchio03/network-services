@@ -9,14 +9,6 @@ import (
 )
 
 func main() {
-	// Conectar ao servidor DHCP
-	conn, err := net.Dial("udp", "localhost:67")
-	if err != nil {
-		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
-		return
-	}
-	defer conn.Close()
-
 	// Configurar uma conexão de leitura UDP para receber respostas do servidor DHCP
 	readConn, err := net.ListenPacket("udp", ":68")
 	if err != nil {
@@ -30,7 +22,7 @@ func main() {
 
 	// Construir e enviar uma mensagem DHCP Discover
 	discoverPacket := buildDHCPDiscover()
-	_, err = conn.Write(discoverPacket)
+	_, err = readConn.WriteTo(discoverPacket, &net.UDPAddr{IP: net.IPv4bcast, Port: 67})
 	if err != nil {
 		fmt.Printf("Erro ao enviar mensagem DHCP Discover: %v\n", err)
 		return
@@ -52,9 +44,12 @@ func main() {
 	// Extrair o endereço IP oferecido pelo servidor DHCP (yourIP)
 	yourIP := net.IPv4(offerPacket[16], offerPacket[17], offerPacket[18], offerPacket[19])
 
+	fmt.Println("offerPacket ", offerPacket)
+	fmt.Println("yourIP ", yourIP)
+
 	// Construir e enviar uma mensagem DHCP Request
 	requestPacket := buildDHCPRequest(yourIP)
-	_, err = conn.Write(requestPacket)
+	_, err = readConn.WriteTo(requestPacket, &net.UDPAddr{IP: net.IPv4bcast, Port: 67})
 	if err != nil {
 		fmt.Printf("Erro ao enviar mensagem DHCP Request: %v\n", err)
 		return
@@ -70,12 +65,21 @@ func main() {
 		return
 	}
 
-	fmt.Println("ACK DHCP recebido")
+	fmt.Println("ACK DHCP recebido", ackPacket)
 
-	// Extrair o endereço IP concedido pelo servidor DHCP (yourIP)
-	yourIP = net.IPv4(ackPacket[16], ackPacket[17], ackPacket[18], ackPacket[19])
+	// Extrair o endereço IP concedido pelo servidor DHCP
+	var yourIPAck net.IP
+	if len(ackPacket) >= 20 { // Verificar se há pelo menos 20 bytes no pacote
+		yourIPAck = net.IP(ackPacket[20:24]) // Extrair os bytes do 21 ao 24 para o endereço IP
+	}
 
-	fmt.Printf("Endereço IP concedido pelo servidor DHCP (ACK): %s\n", yourIP.String())
+	// Verificar se o endereço IP está corretamente definido
+	if yourIPAck.To4() == nil {
+		fmt.Println("Endereço IP concedido inválido pelo servidor DHCP (ACK)")
+	} else {
+		//fmt.Printf("Endereço IP concedido pelo servidor DHCP (ACK): %s\n", yourIPAck.String())
+		fmt.Println("Endereço IP concedido pelo servidor DHCP (ACK)")
+	}
 }
 
 // buildDHCPDiscover constrói uma mensagem DHCP Discover.
