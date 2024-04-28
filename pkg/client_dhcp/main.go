@@ -44,8 +44,20 @@ func main() {
 	// Extrair o endereço IP oferecido pelo servidor DHCP (yourIP)
 	yourIP := net.IPv4(offerPacket[16], offerPacket[17], offerPacket[18], offerPacket[19])
 
+	// Extrair endereço IP do cliente (Client IP)
+	clientIP := net.IPv4(offerPacket[12], offerPacket[13], offerPacket[14], offerPacket[15])
+
+	// Extrair endereço IP do servidor (Server IP)
+	serverIP := net.IPv4(offerPacket[20], offerPacket[21], offerPacket[22], offerPacket[23])
+
+	// Extrair endereço IP do gateway (Gateway IP)
+	gatewayIP := net.IPv4(offerPacket[24], offerPacket[25], offerPacket[26], offerPacket[27])
+
 	fmt.Println("offerPacket ", offerPacket)
 	fmt.Println("yourIP ", yourIP)
+	fmt.Println("clientIP ", clientIP)
+	fmt.Println("serverIP ", serverIP)
+	fmt.Println("gatewayIP ", gatewayIP)
 
 	// Construir e enviar uma mensagem DHCP Request
 	requestPacket := buildDHCPRequest(yourIP)
