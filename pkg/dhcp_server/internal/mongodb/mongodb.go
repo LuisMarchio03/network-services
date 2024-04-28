@@ -105,3 +105,28 @@ func (db *MongoDB) DeleteIP(ctx context.Context, ip string) error {
 	_, err := db.Collection.DeleteOne(ctx, bson.M{"ip_address": ip})
 	return err
 }
+
+// FindIP busca no MongoDB por um endereço IP disponível que ainda não foi atribuído.
+// Retorna o endereço IP encontrado ou um erro se não houver IPs disponíveis.
+// Parâmetros:
+//   - ctx: Contexto de execução para controle de tempo e cancelamento.
+//   - desiredIP: Endereço IP específico desejado (opcional). Se vazio, retorna qualquer endereço IP disponível.
+//
+// Retorna:
+//   - O endereço IP encontrado.
+//   - Um possível erro, se houver problemas durante a busca.
+func (db *MongoDB) FindIP(ctx context.Context, desiredIP string) (string, error) {
+	// Define o filtro para buscar um IP não atribuído específico ou qualquer IP disponível
+	filter := bson.M{}
+	if desiredIP != "" {
+		filter["ip_address"] = desiredIP
+	}
+
+	var ipRecord schemas.IPRecord
+	err := db.Collection.FindOne(ctx, filter).Decode(&ipRecord)
+	if err != nil {
+		return "", err
+	}
+
+	return ipRecord.IPAddress, nil
+}

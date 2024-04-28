@@ -80,7 +80,36 @@ func (s *Server) processDHCPMessage(request []byte, addr net.Addr) {
 		if offer != nil {
 			s.conn.WriteTo(offer, addr)
 		}
+	case 3: // DHCP Request
+		// Extrair o endereço IP solicitado da mensagem DHCP Request
+		requestedIP := net.IP(request[12:16]).String()
+
+		// Verificar se o endereço IP solicitado está disponível
+		if s.isIPAvailable(requestedIP) {
+			// Construir e enviar uma mensagem DHCP ACK (Acknowledge)
+			ack := s.buildDHCPAck(request, requestedIP)
+			s.conn.WriteTo(ack, addr)
+		} else {
+			// Construir e enviar uma mensagem DHCP NAK (Not Acknowledge)
+			nak := s.buildDHCPNak(request)
+			s.conn.WriteTo(nak, addr)
+		}
 	}
+}
+
+// isIPAvailable verifica se o endereço IP especificado está disponível para concessão.
+func (s *Server) isIPAvailable(ip string) bool {
+	// Buscar ctx
+	ctx := s.ctx
+
+	// Consultar o MongoDB para verificar se o endereço IP está disponível
+	_, err := s.db.FindIP(ctx, ip)
+	if err != nil {
+		// Endereço IP não encontrado no banco de dados, considerado disponível
+		return true
+	}
+	// Endereço IP encontrado no banco de dados, considerado indisponível
+	return false
 }
 
 // buildDHCPOffer constrói uma resposta DHCP Offer em resposta a uma solicitação DHCP Discover.
@@ -115,5 +144,30 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 	}
 	copy(offer[16:20], ip)
 
+	err = s.db.UpdateIPAssignment(s.ctx, availableIP, true)
+	if err != nil {
+		logger.Error("Erro ao atualizar status do IP:", err)
+		return nil
+	}
+
 	return offer
+}
+
+// buildDHCPAck constrói uma mensagem DHCP Acknowledge (ACK) em resposta a uma solicitação DHCP Request.
+func (s *Server) buildDHCPAck(request []byte, ip string) []byte {
+	// Constrói a mensagem DHCP ACK
+	ack := make([]byte, 20) // Tamanho mínimo para uma mensagem DHCP ACK
+	ack[0] = 5              // Define o tipo de mensagem como DHCP ACK
+	copy(ack[16:20], net.ParseIP(ip).To4())
+
+	return ack
+}
+
+// buildDHCPNak constrói uma mensagem DHCP Not Acknowledge (NAK) em resposta a uma solicitação DHCP Request.
+func (s *Server) buildDHCPNak(request []byte) []byte {
+	// Constrói a mensagem DHCP NAK
+	nak := make([]byte, 20) // Tamanho mínimo para uma mensagem DHCP NAK
+	nak[0] = 6              // Define o tipo de mensagem como DHCP NAK
+
+	return nak
 }
