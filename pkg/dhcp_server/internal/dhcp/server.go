@@ -97,11 +97,16 @@ func (s *Server) processDHCPMessage(request []byte, addr net.Addr) {
 // Retorna:
 //   - Um pacote DHCP Offer pronto para ser enviado ao cliente.
 func (s *Server) buildDHCPOffer(request []byte) []byte {
-	// Cria uma cópia da solicitação DHCP como base para a oferta DHCP
-	offer := make([]byte, len(request))
-	copy(offer, request)
+	// Verifica se a solicitação DHCP tem o tamanho mínimo necessário
+	if len(request) < 20 {
+		logger.Info("Solicitação DHCP inválida: tamanho insuficiente")
+		return nil
+	}
 
-	// Modifica o tipo de mensagem para DHCP Offer (código 2)
+	// Cria uma oferta DHCP com tamanho suficiente para conter todos os dados necessários
+	offer := make([]byte, 20) // Por exemplo, oferece espaço para 20 bytes
+
+	// Copia o tipo de mensagem para DHCP Offer (código 2)
 	offer[0] = 2
 
 	// Identifica um endereço IP disponível usando o MongoDB
@@ -112,15 +117,16 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 	}
 
 	// Converte o endereço IP de string para o formato de bytes IPv4
-ip := net.ParseIP(availableIP).To4()
-if ip == nil {
-    logger.Error("Erro ao converter o endereço IP para formato IPv4")
-    return nil
-}
+	ip := net.ParseIP(availableIP).To4()
 
-// Inclui o endereço IP na oferta DHCP (mínimo entre o tamanho do IP e o tamanho disponível na oferta)
-copy(offer[16:16+len(ip)], ip)
+	// Verifica se o endereço IP convertido tem o tamanho esperado (IPv4 = 4 bytes)
+	if len(ip) != 4 {
+		logger.Info("Endereço IP inválido")
+		return nil
+	}
 
+	// Copia o endereço IP para a oferta DHCP
+	copy(offer[16:20], ip)
 
 	return offer
 }
