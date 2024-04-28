@@ -17,6 +17,13 @@ type Server struct {
 }
 
 // NewServer cria e configura um novo servidor DHCP.
+// Ele inicializa um socket UDP na porta 67 para escutar mensagens DHCP.
+// Parâmetros:
+//   - ctx: Contexto de execução para controle de tempo e cancelamento.
+//   - db: Instância do MongoDB para interação com o banco de dados.
+//
+// Retorna:
+//   - Um ponteiro para a estrutura Server e um possível erro, se houver.
 func NewServer(ctx context.Context, db *mongodb.MongoDB) (*Server, error) {
 	// Inicializar o socket UDP na porta 67
 	conn, err := net.ListenPacket("udp", ":67")
@@ -37,6 +44,8 @@ func NewServer(ctx context.Context, db *mongodb.MongoDB) (*Server, error) {
 }
 
 // Start inicia o servidor DHCP para processar mensagens DHCP.
+// Ele fica em um loop infinito para ler e processar as mensagens DHCP recebidas.
+// Fecha o socket ao encerrar a execução.
 func (s *Server) Start() error {
 	defer s.conn.Close()
 
@@ -58,85 +67,53 @@ func (s *Server) Start() error {
 // processDHCPMessage processa uma mensagem DHCP recebida e encaminha para a lógica de construção de resposta apropriada.
 // Parâmetros:
 //   - request: Um slice de bytes contendo a mensagem DHCP recebida.
-//   - conn: Uma conexão de pacote net.PacketConn para enviar respostas DHCP.
-//   - addr: O endereço net.Addr do cliente que enviou a mensagem DHCP.
-//   - db: Uma instância do MongoDB para interagir com o banco de dados.
-//   - ctx: O contexto da execução para controlar o tempo e o cancelamento de operações.
-//
-// A função processDHCPMessage determina o tipo de mensagem DHCP com base no primeiro byte da mensagem (messageType) e executa a lógica correspondente:
-//   - Para DHCP Discover (messageType = 1): Chama buildDHCPOffer para construir uma oferta DHCP e a envia de volta ao cliente DHCP.
-//   - Outros tipos de mensagens DHCP podem ser adicionados com casos adicionais no switch.
-//
-// processDHCPMessage processa uma mensagem DHCP recebida.
+//   - addr: O endereço do cliente que enviou a mensagem DHCP.
 func (s *Server) processDHCPMessage(request []byte, addr net.Addr) {
-	// Implemente a lógica para interpretar e responder à mensagem DHCP recebida
-	// Você pode chamar funções auxiliares dentro do contexto do servidor DHCP (s)
+	// Interpretar o tipo de mensagem DHCP
 	messageType := request[0]
 
-	// Avaliar o tipo de mensagem DHCP e executar a lógica apropriada
+	// Processar a mensagem DHCP com base no tipo
 	switch messageType {
 	case 1: // DHCP Discover
-		// Construir uma oferta DHCP em resposta ao DHCP Discover
+		// Construir e enviar uma oferta DHCP em resposta ao DHCP Discover
 		offer := s.buildDHCPOffer(request)
-
-		// Enviar a oferta DHCP de volta ao cliente DHCP
 		if offer != nil {
 			s.conn.WriteTo(offer, addr)
 		}
-
-		// Adicione outros casos conforme necessário para outros tipos de mensagens DHCP
 	}
 }
 
 // buildDHCPOffer constrói uma resposta DHCP Offer em resposta a uma solicitação DHCP Discover.
-// Esta função é responsável por identificar um endereço IP disponível para oferecer ao cliente,
-// construir a estrutura do pacote DHCP Offer e enviá-lo de volta ao cliente.
 // Parâmetros:
 //   - request: O pacote DHCP Discover enviado pelo cliente.
 //
 // Retorna:
 //   - Um pacote DHCP Offer pronto para ser enviado ao cliente.
 func (s *Server) buildDHCPOffer(request []byte) []byte {
-	// Verifica se a solicitação DHCP tem o tamanho mínimo necessário
+	// Verifica a validade da solicitação DHCP
 	if len(request) < 20 {
 		logger.Info("Solicitação DHCP inválida: tamanho insuficiente")
 		return nil
 	}
 
-	// Cria uma oferta DHCP com tamanho suficiente para conter todos os dados necessários
+	// Constrói uma oferta DHCP com um endereço IP disponível
 	offer := make([]byte, 20) // Por exemplo, oferece espaço para 20 bytes
+	offer[0] = 2              // Define o tipo de mensagem como DHCP Offer
 
-	// Copia o tipo de mensagem para DHCP Offer (código 2)
-	offer[0] = 2
-
-	// Identifica um endereço IP disponível usando o MongoDB
+	// Encontra um endereço IP disponível usando o MongoDB
 	availableIP, err := s.db.FindAvailableIP(s.ctx)
 	if err != nil {
 		logger.Error("Erro ao encontrar um endereço IP disponível:", err)
 		return nil
 	}
 
-	// Converte o endereço IP de string para o formato de bytes IPv4
+	// Converte o endereço IP para o formato correto e o adiciona à oferta DHCP
 	ip := net.ParseIP(availableIP).To4()
-
-	// Verifica se o endereço IP convertido tem o tamanho esperado (IPv4 = 4 bytes)
 	if len(ip) != 4 {
 		logger.Info("Endereço IP inválido")
 		return nil
 	}
-
-	// Copia o endereço IP para a oferta DHCP
 	copy(offer[16:20], ip)
 
 	return offer
 }
-
-// buildDHCPAcknowledge constrói uma resposta DHCP Acknowledge
-// func buildDHCPAcknowledge(request []byte) []byte {
-// 	// TODO: Implementar a lógica para construir uma resposta DHCP Acknowledge
-// 	// O exemplo abaixo simplesmente copia o pacote de solicitação como resposta
-// 	acknowledge := make([]byte, len(request))
-// 	copy(acknowledge, request)
-// 	acknowledge[0] = 5 // Modifica o tipo de mensagem para DHCP Acknowledge
-// 	return acknowledge
-// }
