@@ -10,7 +10,8 @@ import (
 
 func main() {
 	// Configurar uma conexão de leitura UDP para receber respostas do servidor DHCP
-	readConn, err := net.ListenPacket("udp", ":68")
+	//readConn, err := net.ListenPacket("udp", ":68") // Windows
+	readConn, err := net.ListenPacket("udp", ":66") // Linux
 	if err != nil {
 		fmt.Printf("Erro ao configurar conexão de leitura UDP: %v\n", err)
 		return
