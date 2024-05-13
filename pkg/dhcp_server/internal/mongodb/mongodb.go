@@ -34,7 +34,7 @@ type MongoDB struct {
 //}
 
 // ConnectOrCreateCollection estabelece uma conexão com o MongoDB e cria a coleção se não existir
-func ConnectOrCreateCollection(ctx context.Context, uri, dbName, collectionName string) (*mongo.Collection, error) {
+func ConnectOrCreateCollection(ctx context.Context, uri, dbName, collectionName string) (*MongoDB, error) {
 	// Estabelece a conexão com o MongoDB
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
@@ -62,7 +62,10 @@ func ConnectOrCreateCollection(ctx context.Context, uri, dbName, collectionName 
 
 	// Retorna a referência para a coleção
 	collection := client.Database(dbName).Collection(collectionName)
-	return collection, nil
+	return &MongoDB{
+		Client:     client,
+		Collection: collection,
+	}, nil
 }
 
 // Verifica se a coleção existe no MongoDB

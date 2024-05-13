@@ -53,7 +53,7 @@ func connectToMongoDB() (*mongodb.MongoDB, error) {
 	collectionName := "ip_addresses"
 
 	// Conectar ao servidor MongoDB
-	client, err := mongodb.ConnectMongoDB(ctx, uri, dbName, collectionName)
+	client, err := mongodb.ConnectOrCreateCollection(ctx, uri, dbName, collectionName)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao conectar ao MongoDB: %v", err)
 	}
