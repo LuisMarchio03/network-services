@@ -60,7 +60,7 @@ func main() {
 
 	fmt.Println("Mensagem DHCP Request enviada com sucesso")
 
-	// Exemplo de uso da função buildDHCPRelease():
+	// Exemplo de uso da func buildDHCPRelease():
 
 	//leaseIP := net.ParseIP("192.168.1.100")
 	//clientMAC := "01:02:03:04:05:06"
