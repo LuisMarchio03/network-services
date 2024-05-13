@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	// Estabelecer conexão UDP com o servidor DHCP na porta 67
 	conn, err := net.Dial("udp", "localhost:67")
 	if err != nil {
 		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
@@ -15,56 +16,210 @@ func main() {
 	}
 	defer conn.Close()
 
-	// Construir uma mensagem DHCP Discover
-	messageType := byte(1)                    // Tipo 1 indica DHCP Discover
-	hardwareType := byte(1)                   // Tipo 1 indica endereço MAC Ethernet
-	hardwareLength := byte(6)                 // Tamanho do endereço MAC
-	xid := uint32(123456789)                  // Número de transação DHCP
-	secs := uint16(0)                         // Segundos desde que o processo de boot começou
-	flags := uint16(0)                        // Flags (reservado, não usado)
-	clientIP := net.IPv4(0, 0, 0, 0).To4()     // Endereço IP do cliente (0.0.0.0)
-	yourIP := net.IPv4(0, 0, 0, 0).To4()       // Endereço IP oferecido pelo servidor (0.0.0.0)
-	serverIP := net.IPv4(0, 0, 0, 0).To4()     // Endereço IP do servidor DHCP (0.0.0.0)
-	gatewayIP := net.IPv4(0, 0, 0, 0).To4()    // Endereço IP do gateway (0.0.0.0)
-	clientHardwareAddr, _ := net.ParseMAC("01:02:03:04:05:06") // Endereço MAC do cliente
-
-	// Construir a mensagem DHCP Discover como um buffer de bytes
-	var buf bytes.Buffer
-	buf.WriteByte(messageType)
-	buf.WriteByte(hardwareType)
-	buf.WriteByte(hardwareLength)
-	buf.WriteByte(0)                          // Hops (não usado)
-	binary.Write(&buf, binary.BigEndian, xid)
-	binary.Write(&buf, binary.BigEndian, secs)
-	binary.Write(&buf, binary.BigEndian, flags)
-	binary.Write(&buf, binary.BigEndian, clientIP)
-	binary.Write(&buf, binary.BigEndian, yourIP)
-	binary.Write(&buf, binary.BigEndian, serverIP)
-	binary.Write(&buf, binary.BigEndian, gatewayIP)
-	binary.Write(&buf, binary.BigEndian, clientHardwareAddr)
-	buf.Write(make([]byte, 202-10-6)) // Preencher com zeros para completar até 300 bytes (tamanho mínimo)
-
-	// Enviar mensagem DHCP para o servidor
-	_, err = conn.Write(buf.Bytes())
+	// Construir e enviar uma mensagem DHCP Discover
+	dhcpDiscoverMsg, err := buildDHCPDiscover()
 	if err != nil {
-		fmt.Printf("Erro ao enviar mensagem DHCP: %v\n", err)
+		fmt.Printf("Erro ao construir mensagem DHCP Discover: %v\n", err)
+		return
+	}
+
+	_, err = conn.Write(dhcpDiscoverMsg)
+	if err != nil {
+		fmt.Printf("Erro ao enviar mensagem DHCP Discover: %v\n", err)
 		return
 	}
 
 	fmt.Println("Mensagem DHCP Discover enviada com sucesso")
 
-	// Aguardar resposta do servidor
+	// Aguardar e processar a resposta do servidor DHCP
 	buffer := make([]byte, 1024)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		fmt.Printf("Erro ao receber resposta DHCP: %v\n", err)
 		return
 	}
-
 	_ = n
 
-	// Extrair o endereço IP "yourIP" da resposta DHCP
-	yourIP = net.IPv4(buffer[16], buffer[17], buffer[18], buffer[19])
+	// Extrair o endereço IP oferecido pela resposta DHCP
+	offeredIP := net.IPv4(buffer[16], buffer[17], buffer[18], buffer[19])
 
-	fmt.Printf("Endereço IP yourIP: %s\n", yourIP.String())
+	fmt.Printf("Endereço IP oferecido pelo servidor DHCP: %s\n", offeredIP.String())
+
+	// Construir e enviar uma mensagem DHCP Request com o endereço IP oferecido
+	dhcpRequestMsg, err := buildDHCPRequest(offeredIP)
+	if err != nil {
+		fmt.Printf("Erro ao construir mensagem DHCP Request: %v\n", err)
+		return
+	}
+
+	_, err = conn.Write(dhcpRequestMsg)
+	if err != nil {
+		fmt.Printf("Erro ao enviar mensagem DHCP Request: %v\n", err)
+		return
+	}
+
+	fmt.Println("Mensagem DHCP Request enviada com sucesso")
+
+	// Exemplo de uso da função buildDHCPRelease():
+
+	//leaseIP := net.ParseIP("192.168.1.100")
+	//clientMAC := "01:02:03:04:05:06"
+	//
+	//// Construir mensagem DHCP Release
+	//dhcpReleaseMsg, err := buildDHCPRelease(clientMAC, leaseIP)
+	//if err != nil {
+	//	fmt.Printf("Erro ao construir mensagem DHCP Release: %v\n", err)
+	//	return
+	//}
+	//
+	//// Enviar mensagem DHCP Release para o servidor DHCP
+	//_, err = conn.Write(dhcpReleaseMsg)
+	//if err != nil {
+	//	fmt.Printf("Erro ao enviar mensagem DHCP Release: %v\n", err)
+	//	return
+	//}
+	//
+	//fmt.Println("Mensagem DHCP Release enviada com sucesso")
+
+}
+
+// buildDHCPDiscover constrói uma mensagem DHCP Discover.
+func buildDHCPDiscover() ([]byte, error) {
+	var buf bytes.Buffer
+
+	// Tipo de mensagem DHCP Discover (1)
+	buf.WriteByte(1)
+	// Tipo de hardware (Ethernet) e tamanho do endereço MAC (6 bytes)
+	buf.WriteByte(1)
+	buf.WriteByte(6)
+	// Número de transação DHCP (XID)
+	xid := uint32(123456789)
+	binary.Write(&buf, binary.BigEndian, xid)
+	// Segundos desde o boot (0)
+	secs := uint16(0)
+	binary.Write(&buf, binary.BigEndian, secs)
+	// Flags (0)
+	flags := uint16(0)
+	binary.Write(&buf, binary.BigEndian, flags)
+	// Endereço IP do cliente (0.0.0.0)
+	clientIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, clientIP)
+	// Endereço IP oferecido pelo servidor (0.0.0.0)
+	yourIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, yourIP)
+	// Endereço IP do servidor DHCP (0.0.0.0)
+	serverIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, serverIP)
+	// Endereço IP do gateway (0.0.0.0)
+	gatewayIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, gatewayIP)
+	// Endereço MAC do cliente (01:02:03:04:05:06)
+	clientHardwareAddr, err := net.ParseMAC("01:02:03:04:05:06")
+	if err != nil {
+		return nil, fmt.Errorf("erro ao parsear MAC: %v", err)
+	}
+	buf.Write(clientHardwareAddr)
+
+	// Preencher o restante do buffer com zeros para completar até 300 bytes
+	paddingLength := 300 - buf.Len()
+	if paddingLength > 0 {
+		buf.Write(make([]byte, paddingLength))
+	}
+
+	return buf.Bytes(), nil
+}
+
+// buildDHCPRequest constrói uma mensagem DHCP Request com base no endereço IP oferecido.
+func buildDHCPRequest(offeredIP net.IP) ([]byte, error) {
+	var buf bytes.Buffer
+
+	// Tipo de mensagem DHCP Request (3)
+	buf.WriteByte(3)
+
+	// Tipo de hardware (Ethernet) e tamanho do endereço MAC (6 bytes)
+	buf.WriteByte(1)
+	buf.WriteByte(6)
+
+	// Número de transação DHCP (XID)
+	xid := uint32(123456789)
+	binary.Write(&buf, binary.BigEndian, xid)
+
+	// Segundos desde o boot (0)
+	secs := uint16(0)
+	binary.Write(&buf, binary.BigEndian, secs)
+
+	// Flags (0)
+	flags := uint16(0)
+	binary.Write(&buf, binary.BigEndian, flags)
+
+	// Endereço IP do cliente (0.0.0.0)
+	clientIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, clientIP)
+
+	// Endereço IP oferecido pelo servidor DHCP
+	binary.Write(&buf, binary.BigEndian, offeredIP)
+
+	// Endereço IP do servidor DHCP (0.0.0.0)
+	serverIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, serverIP)
+
+	// Endereço IP do gateway (0.0.0.0)
+	gatewayIP := net.IPv4(0, 0, 0, 0).To4()
+	binary.Write(&buf, binary.BigEndian, gatewayIP)
+
+	// Endereço MAC do cliente (01:02:03:04:05:06)
+	clientHardwareAddr, err := net.ParseMAC("01:02:03:04:05:06")
+	if err != nil {
+		return nil, fmt.Errorf("erro ao parsear MAC: %v", err)
+	}
+	buf.Write(clientHardwareAddr)
+
+	// Preencher o restante do buffer com zeros para completar até 300 bytes
+	paddingLength := 300 - buf.Len()
+	if paddingLength > 0 {
+		buf.Write(make([]byte, paddingLength))
+	}
+
+	return buf.Bytes(), nil
+}
+
+// buildDHCPRelease constrói uma mensagem DHCP Release para liberar um endereço IP.
+func buildDHCPRelease(clientMAC string, leaseIP net.IP) ([]byte, error) {
+	var buf bytes.Buffer
+
+	// Tipo de mensagem DHCP Release (7)
+	buf.WriteByte(7)
+
+	// Tipo de hardware (Ethernet) e tamanho do endereço MAC (6 bytes)
+	buf.WriteByte(1)
+	buf.WriteByte(6)
+
+	// Número de transação DHCP (XID)
+	xid := uint32(123456789)
+	binary.Write(&buf, binary.BigEndian, xid)
+
+	// Preencher com zeros para o restante do cabeçalho DHCP
+	buf.Write(make([]byte, 202))
+
+	// Endereço IP do cliente
+	clientIP := net.IPv4(0, 0, 0, 0).To4()
+	buf.Write(clientIP)
+
+	// Endereço IP liberado (lease IP)
+	buf.Write(leaseIP)
+
+	// Endereço MAC do cliente
+	clientHardwareAddr, err := net.ParseMAC(clientMAC)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao parsear MAC: %v", err)
+	}
+	buf.Write(clientHardwareAddr)
+
+	// Preencher o restante do buffer com zeros para completar até 300 bytes
+	paddingLength := 300 - buf.Len()
+	if paddingLength > 0 {
+		buf.Write(make([]byte, paddingLength))
+	}
+
+	return buf.Bytes(), nil
 }

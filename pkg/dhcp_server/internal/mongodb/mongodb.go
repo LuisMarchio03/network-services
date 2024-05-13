@@ -68,3 +68,17 @@ func (db *MongoDB) DeleteIP(ctx context.Context, ip string) error {
 	_, err := db.Collection.DeleteOne(ctx, bson.M{"ip_address": ip})
 	return err
 }
+
+// ReleaseIPAddress marca um endereço IP como disponível novamente no MongoDB
+func (db *MongoDB) ReleaseIPAddress(ctx context.Context, ip string) error {
+	// Atualiza o status de atribuição do endereço IP para 'false' (não atribuído) no MongoDB
+	err := db.UpdateIPAssignment(ctx, ip, false)
+	if err != nil {
+		return err
+	}
+
+	// Registro de log indicando que o endereço IP foi liberado com sucesso
+	log.Printf("Endereço IP %s foi liberado com sucesso", ip)
+
+	return nil
+}
