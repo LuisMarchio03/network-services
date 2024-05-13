@@ -2,12 +2,13 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"network-services-server-dhcp/internal/mongodb/schemas"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // MongoDB é uma estrutura que contém a conexão com o MongoDB
@@ -16,20 +17,79 @@ type MongoDB struct {
 	Collection *mongo.Collection
 }
 
-// ConnectMongoDB estabelece uma conexão com o MongoDB
-func ConnectMongoDB(ctx context.Context, uri, dbName, collectionName string) (*MongoDB, error) {
-	clientOptions := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(ctx, clientOptions)
+//// ConnectMongoDB estabelece uma conexão com o MongoDB
+//func ConnectMongoDB(ctx context.Context, uri, dbName, collectionName string) (*MongoDB, error) {
+//	clientOptions := options.Client().ApplyURI(uri)
+//	client, err := mongo.Connect(ctx, clientOptions)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	collection := client.Database(dbName).Collection(collectionName)
+//
+//	return &MongoDB{
+//		Client:     client,
+//		Collection: collection,
+//	}, nil
+//}
+
+// ConnectOrCreateCollection estabelece uma conexão com o MongoDB e cria a coleção se não existir
+func ConnectOrCreateCollection(ctx context.Context, uri, dbName, collectionName string) (*mongo.Collection, error) {
+	// Estabelece a conexão com o MongoDB
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("falha ao conectar ao MongoDB: %v", err)
+	}
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			fmt.Printf("Erro ao desconectar do MongoDB: %v\n", err)
+		}
+	}()
+
+	// Verifica se a coleção já existe
+	collectionExists, err := checkCollectionExists(ctx, client, dbName, collectionName)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao verificar a existência da coleção: %v", err)
 	}
 
-	collection := client.Database(dbName).Collection(collectionName)
+	if !collectionExists {
+		// Cria a coleção se não existir
+		err := createCollection(ctx, client, dbName, collectionName)
+		if err != nil {
+			return nil, fmt.Errorf("falha ao criar a coleção: %v", err)
+		}
+	}
 
-	return &MongoDB{
-		Client:     client,
-		Collection: collection,
-	}, nil
+	// Retorna a referência para a coleção
+	collection := client.Database(dbName).Collection(collectionName)
+	return collection, nil
+}
+
+// Verifica se a coleção existe no MongoDB
+func checkCollectionExists(ctx context.Context, client *mongo.Client, dbName, collectionName string) (bool, error) {
+	collections, err := client.Database(dbName).ListCollectionNames(ctx, options.ListCollections())
+	if err != nil {
+		return false, err
+	}
+
+	for _, col := range collections {
+		if col == collectionName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// Cria a coleção no MongoDB
+func createCollection(ctx context.Context, client *mongo.Client, dbName, collectionName string) error {
+	err := client.Database(dbName).CreateCollection(ctx, collectionName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Coleção '%s' criada com sucesso.\n", collectionName)
+	return nil
 }
 
 // Close encerra a conexão com o MongoDB
