@@ -32,3 +32,4 @@ Identificador da Transação (XID): 0xabcdef12
 ```
 
 - Na mensagem acima, o cliente DHCP está enviando um DHCP Release para liberar voluntariamente o endereço IP 192.168.1.100 que lhe foi atribuído, identificado pelo seu endereço MAC específico e um identificador de transação único.
+- 
