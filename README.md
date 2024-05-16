@@ -54,3 +54,56 @@
   
   - Logs: Configurar servidor de logs para monitoramento.
 
+# Mini Curso de Redes Integrado com Desenvolvimento Prático
+
+## Mini Curso de Redes - Parte 1: Fundamentos de Redes de Computadores (Semana de SI)
+### Tema Principal: Introdução aos Fundamentos de Redes
+#### Aplicação Prática: Implementação de Servidor TCP
+- **Título do Curso:** "Construindo e Compreendendo Redes - Parte 1"
+- **Conteúdo:**
+  - Visão geral dos princípios básicos de redes de computadores
+  - Implementação de um servidor TCP simples
+  - Demonstração de comunicação básica cliente-servidor
+  - Uso de sockets para comunicação de rede
+- **Atividade Prática:**
+  - Desenvolvimento de um servidor de eco TCP
+  - Exercícios para entender o fluxo de dados entre cliente e servidor
+
+## Mini Curso de Redes - Parte 2: Tecnologias Avançadas e Segurança em Redes (Semana Universitária)
+### Tema Principal: Explorando Tecnologias Avançadas em Redes
+#### Aplicação Prática em Go: Desenvolvimento de Servidor HTTP com Roteamento
+- **Título do Curso:** "Explorando Redes Avançadas - Parte 2"
+- **Conteúdo:**
+  - Implementação de um servidor HTTP com gerenciamento de rotas
+  - Exploração de conceitos avançados de redes, incluindo roteamento e segurança
+  - Introdução à segurança básica em servidores web
+- **Atividade Prática:**
+  - Desenvolvimento de um servidor HTTP com roteamento de URLs
+  - Discussão sobre práticas de segurança e proteção contra ataques comuns
+
+# Estratégias de Ensino e Aprendizagem
+- **Integração Conceitual:** Cada curso aborda um conjunto específico de conceitos de redes, integrados com implementações práticas em Go ou C.
+- **Progressão Lógica:** Os participantes iniciam com os fundamentos básicos de redes e avançam para tecnologias mais avançadas, aplicando esses conhecimentos na criação de servidores em Go ou C.
+- **Projeto Cumulativo:** Os participantes desenvolvem habilidades ao longo do curso, culminando na criação de servidores TCP e HTTP funcionais.
+
+# Benefícios da Abordagem Integrada
+- **Aprendizado Holístico:** Os participantes adquirem conhecimento teórico e prático, compreendendo os fundamentos das redes enquanto aplicam esses conceitos em projetos reais.
+- **Preparação para o Mercado:** O desenvolvimento de servidores em Go ou C os prepara para enfrentar desafios reais no campo da computação e redes.
+
+# Recursos Necessários
+- **Ambiente de Desenvolvimento:** Voltado para configuração de redes.
+- **Material Didático:** Prepare materiais detalhados que combinam teoria de redes com exemplos de código em Go ou C, incluindo exercícios práticos e projetos.
+
+> **Obs:** O desenvolvimento prático não necessariamente será em tempo real, será mais uma apresentação da lógica para criação dos serviços e apresentações dos códigos para os participantes de forma básica. O foco é o desenvolvimento de habilidades em redes e não em programação.
+
+# Etapas Gerais de Desenvolvimento do Projeto para Recriar a Estrutura de uma Rede
+- Server DHCP
+- Server DNS
+- Server TCP
+- Firewall
+- Server HTTP
+- Server FTP
+- Mail Server
+- Outros servidores opcionais para complementar nossa rede...
+
+
