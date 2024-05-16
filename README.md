@@ -54,7 +54,7 @@
   
   - Logs: Configurar servidor de logs para monitoramento.
 
-# Mini Curso de Redes Integrado com Desenvolvimento Prático
+## Mini Curso de Redes Integrado com Desenvolvimento Prático
 
 ## Mini Curso de Redes - Parte 1: Fundamentos de Redes de Computadores (Semana de SI)
 ### Tema Principal: Introdução aos Fundamentos de Redes
