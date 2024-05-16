@@ -94,4 +94,4 @@
 | Projeto e Design de Rede    | 1-2 meses        |
 | Implementação de Serviços   | 2 semanas        |
 | Simulação e Teste           | 2 semanas        |
-| Desenvolvimento do artigo   | 2 semanas        |
+| Desenvolvimento do artigo   | ---------        |
