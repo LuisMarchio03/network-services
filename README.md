@@ -88,6 +88,36 @@
 - Servidor de E-mail
 - Outros servidores opcionais para complementar nossa rede...
 
+## Sobre o Projeto e a Implementação na Faculdade
+
+Este projeto é uma iniciativa pessoal, onde irei ministrar os cursos e desenvolver toda a estrutura de rede na [Nome da Faculdade]. A proposta é oferecer uma abordagem prática e detalhada sobre como construir e gerenciar redes locais completas. 
+
+Os cursos serão integrados ao programa acadêmico da faculdade, proporcionando aos alunos a oportunidade de aprender através de atividades práticas e projetos reais. Com foco no desenvolvimento de habilidades em redes de computadores, os participantes serão preparados para enfrentar desafios reais no campo da computação e redes.
+
+## Detalhes da Implementação na Faculdade
+
+- **Local**: [Nome da Faculdade]
+- **Responsável**: [Seu Nome]
+- **Cursos Oferecidos**:
+  - **Mini Curso de Redes - Parte 1**: Fundamentos de Redes de Computadores
+  - **Mini Curso de Redes - Parte 2**: Tecnologias Avançadas e Segurança em Redes
+- **Metodologia**:
+  - Aulas teóricas combinadas com práticas em laboratório
+  - Desenvolvimento de servidores TCP e HTTP utilizando Go e C
+  - Projetos cumulativos que integram os conceitos aprendidos
+- **Recursos Utilizados**:
+  - Laboratório de Informática da Faculdade
+  - Materiais didáticos desenvolvidos especificamente para os cursos
+  - Ambiente de desenvolvimento configurado para simulações de redes
+
+## Benefícios para os Alunos
+
+- **Aprendizado Prático**: Aplicação dos conceitos teóricos em projetos reais, preparando os alunos para o mercado de trabalho.
+- **Desenvolvimento de Habilidades Técnicas**: Foco em tecnologias avançadas de redes e segurança.
+- **Certificação**: Ao concluir os cursos, os alunos receberão um certificado de participação que comprova suas habilidades e conhecimentos adquiridos.
+
+Este projeto não apenas enriquece o currículo dos alunos, mas também contribui para o desenvolvimento de uma infraestrutura de rede robusta e funcional na faculdade, beneficiando toda a comunidade acadêmica.
+
 ## Cronograma
 
 | Fase                        | Duração Estimada |
