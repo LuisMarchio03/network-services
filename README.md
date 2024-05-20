@@ -1,5 +1,7 @@
 # network-services [DEV]
 
+**Este projeto visa simular uma rede local completa, desenvolvida do zero, incluindo todos os componentes essenciais para o funcionamento e segurança da rede. Através de uma combinação de hardware, software e configurações detalhadas, o projeto oferece uma visão abrangente de como configurar e gerenciar uma rede local.**
+
 ## Simulação de uma Rede Local, Desenvolvida do Zero
 
 ### Componentes Essenciais
