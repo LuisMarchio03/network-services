@@ -1,0 +1,9 @@
+[submodule "pkg/network-services_smtp_server_c"]
+	path = pkg/network-services_smtp_server_c
+	url = git@github.com:LuisMarchio03/network-services_smtp_server_c.git
+[submodule "pkg/network-services-dns_server_c"]
+	path = pkg/network-services-dns_server_c
+	url = git@github.com:LuisMarchio03/network-services-dns_server_c.git
+[submodule "pkg/deprecated/golang-dns"]
+	path = pkg/deprecated/golang-dns
+	url = git@github.com:LuisMarchio03/golang-dns.git
