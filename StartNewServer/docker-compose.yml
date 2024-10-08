@@ -70,18 +70,19 @@ services:
     depends_on:
       - mongodb
     restart: always
+    networks:
+      default: null
 
   dhcp_client:
     build:
       context: ../pkg/dhcp_client
       dockerfile: Dockerfile
     container_name: dhcp_client_container
-    ports:
-      - "2200:2200"
     depends_on:
-      - mongodb
+      - dhcp_server
     restart: always
-
+    networks:
+      default: null
 
 volumes:
   mongodb_data:

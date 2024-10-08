@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Estabelecer conexão UDP com o servidor DHCP na porta 67
-	conn, err := net.Dial("udp", "dhcp_client:67")
+	conn, err := net.Dial("udp", "dhcp_server:67")
 	if err != nil {
 		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
 		return
@@ -132,7 +132,6 @@ func main() {
 	//}
 	//
 	//fmt.Println("Mensagem DHCP Release enviada com sucesso")
-
 }
 
 // buildDHCPDiscover constrói uma mensagem DHCP Discover.
