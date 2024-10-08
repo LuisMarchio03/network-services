@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/pkg/deprecated/golang-dns" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/pkg/network-services-dns_server_c" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/pkg/network-services_smtp_server_c" vcs="Git" />
   </component>
 </project>

@@ -1,0 +1,83 @@
+### Criar uma entrada para o serviço DHCP
+POST http://localhost:3000/dhcp
+Content-Type: application/json
+
+{
+  "ip_address": "192.168.1.10",
+  "assigned": true
+}
+
+### Criar uma entrada para o serviço DNS
+POST http://localhost:3000/dns
+Content-Type: application/json
+
+{
+  "domain": "example.com",
+  "ip_address": "192.168.1.20"
+}
+
+### Criar uma entrada para o serviço HTTP
+POST http://localhost:3000/http
+Content-Type: application/json
+
+{
+  "port": 80,
+  "url": "http://example.com",
+  "status": "up"
+}
+
+### Criar uma entrada para o serviço FTP
+POST http://localhost:3000/ftp
+Content-Type: application/json
+
+{
+  "port": 21,
+  "status": "active"
+}
+
+### Criar uma entrada para o serviço de E-mail
+POST http://localhost:3000/email
+Content-Type: application/json
+
+{
+  "smtp_server": "smtp.example.com",
+  "port": 587,
+  "is_active": true
+}
+
+### Criar uma entrada para o serviço de Arquivo
+POST http://localhost:3000/file
+Content-Type: application/json
+
+{
+  "path": "/var/files",
+  "permissions": "read-write"
+}
+
+### Criar uma entrada para o Firewall
+POST http://localhost:3000/firewall
+Content-Type: application/json
+
+{
+  "rule": "ALLOW 192.168.1.0/24",
+  "action": "allow"
+}
+
+### Criar uma entrada para o Servidor LDAP
+POST http://localhost:3000/ldap
+Content-Type: application/json
+
+{
+  "host": "ldap.example.com",
+  "port": 389,
+  "base_dn": "dc=example,dc=com"
+}
+
+### Criar uma entrada para o Servidor de Logs
+POST http://localhost:3000/log
+Content-Type: application/json
+
+{
+  "log_type": "INFO",
+  "message": "Serviço DHCP iniciado"
+}

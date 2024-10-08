@@ -1,0 +1,6 @@
+filebeat.inputs:
+  - type: container
+    containers.ids:
+      - '*'
+    paths:
+      - /var/log/containers/*.log

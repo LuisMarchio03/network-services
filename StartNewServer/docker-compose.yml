@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - http.host=0.0.0.0
+      - transport.host=127.0.0.1
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: kibana:7.17.9
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.24
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: >
+      filebeat -e --strict.perms=false
+      -E output.elasticsearch.hosts=["elasticsearch:9200"]
+
+  app:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - elasticsearch
+
+  dhcp_server:
+    build:
+      context: ../pkg/dhcp_server
+      dockerfile: Dockerfile
+    container_name: dhcp_server_container
+    ports:
+      - "67:67"
+    depends_on:
+      - mongodb
+    restart: always
+
+  dhcp_client:
+    build:
+      context: ../pkg/dhcp_client
+      dockerfile: Dockerfile
+    container_name: dhcp_client_container
+    ports:
+      - "2200:2200"
+    depends_on:
+      - mongodb
+    restart: always
+
+
+volumes:
+  mongodb_data:
