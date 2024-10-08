@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Estabelecer conexão UDP com o servidor DHCP na porta 67
-	conn, err := net.Dial("udp", "127.0.0.1:67")
+	conn, err := net.Dial("udp", "dhcp_client:67")
 	if err != nil {
 		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
 		return

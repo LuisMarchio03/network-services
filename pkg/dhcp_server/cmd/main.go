@@ -50,7 +50,7 @@ func connectToMongoDB() (*mongodb.MongoDB, error) {
 
 	uri := "mongodb://mongodb:27017"
 	dbName := "mydb"
-	collectionName := "ip_addresses"
+	collectionName := "dhcps"
 
 	// Conectar ao servidor MongoDB
 	client, err := mongodb.ConnectOrCreateCollection(ctx, uri, dbName, collectionName)
