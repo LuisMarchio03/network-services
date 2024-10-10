@@ -1,0 +1,3 @@
+G:/Projects/GolangProjects/network-services/pkg/session-manager-c/cmake-build-debug/CMakeFiles/session_manager_c.dir
+G:/Projects/GolangProjects/network-services/pkg/session-manager-c/cmake-build-debug/CMakeFiles/edit_cache.dir
+G:/Projects/GolangProjects/network-services/pkg/session-manager-c/cmake-build-debug/CMakeFiles/rebuild_cache.dir

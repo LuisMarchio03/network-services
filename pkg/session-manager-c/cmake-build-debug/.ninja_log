@@ -1,0 +1,13 @@
+# ninja log v6
+10	75	7501899435160651	CMakeFiles/session_manager_c.dir/src/token.c.obj	9817df46f19cc09b
+19	79	7501899435255876	CMakeFiles/session_manager_c.dir/src/rabbitmq.c.obj	f0777da51664b7ae
+9	75	7502039217769893	CMakeFiles/session_manager_c.dir/src/session.c.obj	ebe9c73b28c3fb15
+1	519	7502045895313145	build.ninja	1dae54ef89270284
+16	74	7501899435220654	CMakeFiles/session_manager_c.dir/src/middleware.c.obj	88be0806c1eebd4a
+5	777	7502039661224470	CMakeFiles/session_manager_c.dir/src/main.c.obj	4a70021d659327b2
+1	8	7501891958462633	clean	97a901f189c2f4c1
+5	741	7502041253396116	CMakeFiles/session_manager_c.dir/src/mongo.c.obj	d9a084ca7c8b9766
+742	812	7502041260769773	session_manager_c.exe	84d59a6db475422f
+8	738	7502046926808391	CMakeFiles/session_manager_c.dir/src/utils.c.obj	a6a050b9d564f1cd
+5	755	7502047149854981	CMakeFiles/session_manager_c.dir/src/mongo.c.obj	d9a084ca7c8b9766
+755	827	7502047157357675	session_manager_c.exe	a76140c9e43f3b19

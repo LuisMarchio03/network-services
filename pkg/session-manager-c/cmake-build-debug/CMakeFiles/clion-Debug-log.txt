@@ -1,0 +1,19 @@
+C:\Users\luis_\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=C:/Users/luis_/AppData/Local/Programs/CLion/bin/ninja/win/x64/ninja.exe -G Ninja -S G:\Projects\GolangProjects\network-services\pkg\session-manager-c -B G:\Projects\GolangProjects\network-services\pkg\session-manager-c\cmake-build-debug
+CMake Error at CMakeLists.txt:36 (find_package):
+  By not providing "Findrabbitmq.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "rabbitmq",
+  but CMake did not find one.
+
+  Could not find a package configuration file provided by "rabbitmq" with any
+  of the following names:
+
+    rabbitmqConfig.cmake
+    rabbitmq-config.cmake
+
+  Add the installation prefix of "rabbitmq" to CMAKE_PREFIX_PATH or set
+  "rabbitmq_DIR" to a directory containing one of the above files.  If
+  "rabbitmq" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+-- Configuring incomplete, errors occurred!
