@@ -73,12 +73,28 @@ func main() {
 	fmt.Printf("Resposta recebida do servidor: %s\n", string(buffer[:n]))
 
 	// Explicação sobre a aceitação do IP
-	promptUser("Etapa 2: Aceitando o IP oferecido pelo servidor...\n")
+	promptUser("Etapa 2: Enviando DHCP Request para confirmar o IP...\n")
 
-	// Simulando a aceitação do IP oferecido pelo servidor DHCP
-	time.Sleep(2 * time.Second)
-	fmt.Println("IP atribuído com sucesso ao cliente DHCP.")
+	// Enviando mensagem DHCP Request
+	requestMessage := fmt.Sprintf("DHCP Request: Cliente MAC: %s solicita o IP oferecido", macAddress)
+	_, err = conn.Write([]byte(requestMessage))
+	if err != nil {
+		fmt.Println("Erro ao enviar mensagem DHCP Request:", err)
+		return
+	}
+
+	fmt.Println("Mensagem DHCP Request enviada. Aguardando confirmação...\n")
+
+	// Recebendo confirmação DHCP Acknowledge do servidor
+	n, _, err = conn.ReadFromUDP(buffer)
+	if err != nil {
+		fmt.Println("Erro ao receber confirmação do servidor:", err)
+		return
+	}
+
+	// Exibindo a resposta do servidor DHCP
+	fmt.Printf("Resposta recebida do servidor: %s\n", string(buffer[:n]))
+
+	// Finalização com sucesso
+	fmt.Println("\nProcesso DHCP finalizado com sucesso. O IP foi atribuído ao cliente.")
 }
-
-// Comando PowerShell para obter o MAC Address do cliente
-// Get-NetAdapter | Format-Table Name, Status, MacAddress, LinkSpeed
