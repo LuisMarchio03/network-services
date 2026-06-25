@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"os"
 	"time"
 
 	"github.com/olivere/elastic/v7" // Biblioteca para trabalhar com Elasticsearch
@@ -23,9 +24,22 @@ type LogEntry struct {
 
 func main() {
 	// Conectar ao RabbitMQ
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/") // Conexão com o servidor RabbitMQ
+	rabbitURL := os.Getenv("RABBITMQ_URL")
+	if rabbitURL == "" {
+		rabbitURL = "amqp://guest:guest@rabbitmq:5672/"
+	}
+	var conn *amqp.Connection
+	var err error
+	for i := 0; i < 30; i++ {
+		conn, err = amqp.Dial(rabbitURL)
+		if err == nil {
+			break
+		}
+		log.Printf("RabbitMQ indisponível (%v), retry...", err)
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %s", err) // Log de erro caso a conexão falhe
+		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 	defer conn.Close() // Fecha a conexão quando o main finalizar
 
@@ -51,7 +65,11 @@ func main() {
 	}
 
 	// Conectar ao Elasticsearch
-	client, err := elastic.NewClient(elastic.SetURL("http://localhost:9200"), elastic.SetSniff(false)) // Criação do cliente Elasticsearch
+	esURL := os.Getenv("ELASTICSEARCH_URL")
+	if esURL == "" {
+		esURL = "http://elasticsearch:9200"
+	}
+	client, err := elastic.NewClient(elastic.SetURL(esURL), elastic.SetSniff(false))
 	if err != nil {
 		log.Fatalf("Error creating the client: %s", err) // Log de erro caso a criação do cliente falhe
 	}

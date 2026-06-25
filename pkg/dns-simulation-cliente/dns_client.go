@@ -1,64 +1,42 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
+	"os"
 	"strings"
+	"time"
 )
 
-// Função para enviar uma requisição de resolução DNS para o servidor
-func sendDNSRequest(domain string, serverAddr string) {
-	// Explicação sobre o que é um cliente DNS
-	fmt.Println("Cliente DNS ativo. O cliente enviará uma requisição para resolver o domínio:", domain)
-	fmt.Println("Ele se conectará ao servidor DNS para receber o endereço IP correspondente.")
+func main() {
+	domain := flag.String("domain", "example.com", "domínio a resolver")
+	server := flag.String("server", "dns-server:53", "endereço do servidor DNS")
+	flag.Parse()
 
-	// Criar um endereço UDP do servidor
-	addr, err := net.ResolveUDPAddr("udp", serverAddr)
+	addr, err := net.ResolveUDPAddr("udp", *server)
 	if err != nil {
 		fmt.Println("Erro ao resolver endereço do servidor:", err)
-		return
+		os.Exit(1)
 	}
-
-	// Criar uma conexão UDP
 	conn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
 		fmt.Println("Erro ao conectar com o servidor DNS:", err)
-		return
+		os.Exit(1)
 	}
 	defer conn.Close()
 
-	// Enviar a requisição (nome do domínio)
-	_, err = conn.Write([]byte(strings.TrimSpace(domain)))
-	if err != nil {
+	if _, err := conn.Write([]byte(strings.TrimSpace(*domain))); err != nil {
 		fmt.Println("Erro ao enviar requisição:", err)
-		return
+		os.Exit(1)
 	}
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 
-	// Receber a resposta (endereço IP)
 	buffer := make([]byte, 1024)
 	n, _, err := conn.ReadFromUDP(buffer)
 	if err != nil {
-		fmt.Println("Erro ao ler resposta do servidor:", err)
-		return
+		fmt.Println("Erro ao ler resposta:", err)
+		os.Exit(1)
 	}
-
-	response := strings.TrimSpace(string(buffer[:n]))
-	fmt.Println("Resposta recebida do servidor DNS: O IP de", domain, "é", response)
-}
-
-// Função principal do cliente DNS
-func main() {
-	fmt.Println("Bem-vindo ao simulador de cliente DNS!")
-	fmt.Println("Você pode simular o envio de uma requisição para resolver um domínio.")
-	fmt.Println("O cliente enviará uma solicitação para o servidor DNS e obterá o endereço IP.")
-
-	var domain, serverAddr string
-	fmt.Print("Digite o domínio que deseja resolver: ")
-	fmt.Scan(&domain)
-
-	fmt.Print("Digite o endereço do servidor DNS (ex: localhost:53): ")
-	fmt.Scan(&serverAddr)
-
-	// Enviar a requisição DNS
-	sendDNSRequest(domain, serverAddr)
+	fmt.Printf("DNS: %s -> %s\n", *domain, strings.TrimSpace(string(buffer[:n])))
 }

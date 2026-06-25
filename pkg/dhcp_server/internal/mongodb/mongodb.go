@@ -40,12 +40,6 @@ func ConnectOrCreateCollection(ctx context.Context, uri, dbName, collectionName 
 	if err != nil {
 		return nil, fmt.Errorf("falha ao conectar ao MongoDB: %v", err)
 	}
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			fmt.Printf("Erro ao desconectar do MongoDB: %v\n", err)
-		}
-	}()
-
 	// Verifica se a coleção já existe
 	collectionExists, err := checkCollectionExists(ctx, client, dbName, collectionName)
 	if err != nil {

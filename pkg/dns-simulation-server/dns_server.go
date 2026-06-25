@@ -1,84 +1,67 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 )
 
-// Função para iniciar o servidor DNS
-func startDNSServer(port string, domainIPMap map[string]string) {
-	// Explicação sobre o que é o DNS e como ele resolve nomes de domínio
-	fmt.Println("DNS Server iniciado...")
-	fmt.Println("O DNS (Domain Name System) é responsável por traduzir nomes de domínio em endereços IP.")
-	fmt.Println("O servidor DNS receberá pedidos para resolução de nomes e retornará o endereço IP correspondente.")
-
-	// Iniciar um listener UDP
-	addr := net.UDPAddr{
-		Port: 53,
-		IP:   net.ParseIP("0.0.0.0"),
+// loadZones carrega o mapa domínio->IP de um arquivo JSON.
+func loadZones(path string) (map[string]string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
 	}
+	zones := make(map[string]string)
+	if err := json.Unmarshal(data, &zones); err != nil {
+		return nil, err
+	}
+	return zones, nil
+}
+
+func startDNSServer(domainIPMap map[string]string) {
+	addr := net.UDPAddr{Port: 53, IP: net.ParseIP("0.0.0.0")}
 	conn, err := net.ListenUDP("udp", &addr)
 	if err != nil {
 		fmt.Println("Erro ao iniciar o servidor DNS:", err)
-		return
+		os.Exit(1)
 	}
 	defer conn.Close()
 
-	// Loop para receber requisições de DNS
+	fmt.Printf("DNS Server (didático) escutando em :53 com %d domínios\n", len(domainIPMap))
+
 	buffer := make([]byte, 1024)
 	for {
-		// Receber uma requisição de um cliente
 		n, clientAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println("Erro ao ler do buffer:", err)
 			continue
 		}
-
 		request := strings.TrimSpace(string(buffer[:n]))
-		fmt.Println("Requisição recebida para resolver o domínio:", request)
-
-		// Procurar o IP associado ao domínio solicitado
 		ip, found := domainIPMap[request]
-		if found {
-			fmt.Println("Domínio encontrado:", request, "->", ip)
-		} else {
-			ip = "0.0.0.0" // Caso o domínio não seja encontrado
+		if !found {
+			ip = "0.0.0.0"
 			fmt.Println("Domínio não encontrado:", request)
+		} else {
+			fmt.Println("Resolvido:", request, "->", ip)
 		}
-
-		// Enviar a resposta de volta ao cliente
-		_, err = conn.WriteToUDP([]byte(ip), clientAddr)
-		if err != nil {
-			fmt.Println("Erro ao enviar resposta para o cliente:", err)
+		if _, err := conn.WriteToUDP([]byte(ip), clientAddr); err != nil {
+			fmt.Println("Erro ao responder:", err)
 		}
 	}
 }
 
-// Função principal do servidor DNS
 func main() {
-	domainIPMap := make(map[string]string)
-
-	// Explicação sobre a configuração inicial
-	fmt.Println("Bem-vindo ao simulador de servidor DNS!")
-	fmt.Println("Você configurará domínios e seus IPs correspondentes.")
-	fmt.Println("Isso permitirá que o servidor resolva nomes quando solicitado por um cliente.")
-
-	// Configurar domínios e IPs
-	for {
-		var domain, ip string
-		fmt.Print("Digite o domínio (ou 'sair' para finalizar): ")
-		fmt.Scan(&domain)
-		if domain == "sair" {
-			break
-		}
-
-		fmt.Print("Digite o endereço IP para o domínio '" + domain + "': ")
-		fmt.Scan(&ip)
-		domainIPMap[domain] = ip
+	zonesFile := os.Getenv("DNS_ZONES_FILE")
+	if zonesFile == "" {
+		zonesFile = "zones.json"
 	}
-
-	// Iniciar o servidor DNS
-	fmt.Println("Iniciando o servidor DNS na porta 53...")
-	startDNSServer("53", domainIPMap)
+	zones, err := loadZones(zonesFile)
+	if err != nil {
+		fmt.Printf("Erro ao carregar zonas de %s: %v\n", zonesFile, err)
+		os.Exit(1)
+	}
+	startDNSServer(zones)
 }

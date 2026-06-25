@@ -1,0 +1,25 @@
+# Go
+*.exe
+*.exe~
+*.test
+*.out
+/pkg/**/main
+/pkg/dhcp_server/cmd/main
+/pkg/dhcp_client/main
+
+# C / CMake
+cmake-build-*/
+*.obj
+*.o
+*.a
+/pkg/deprecated/mail_server/smtp_server
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# Env
+.env

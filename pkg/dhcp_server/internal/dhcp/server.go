@@ -132,12 +132,11 @@ func (s *Server) buildDHCPOffer(request []byte) []byte {
 	offer[0] = 2
 
 	// Identifica um endereço IP disponível usando o MongoDB
-	//availableIP, err := s.db.FindAvailableIP(s.ctx)
-	//if err != nil {
-	//	logger.Error("Erro ao encontrar um endereço IP disponível:", err)
-	//	return nil
-	//}
-	availableIP := "192.168.2.42"
+	availableIP, err := s.db.FindAvailableIP(s.ctx)
+	if err != nil {
+		logger.Error("Erro ao encontrar um endereço IP disponível:", err)
+		return nil
+	}
 
 	// Converte o endereço IP de string para o formato de bytes IPv4
 	ip := net.ParseIP(availableIP).To4()
@@ -196,6 +195,12 @@ func (s *Server) buildDHCPAcknowledge(request []byte) []byte {
 
 	// Extrair o endereço IP solicitado pelo cliente da solicitação DHCP Request
 	requestedIP := net.IP(request[12:16])
+
+	if s.db != nil {
+		if err := s.db.UpdateIPAssignment(s.ctx, requestedIP.String(), true); err != nil {
+			logger.Error("Erro ao marcar IP como atribuído:", err)
+		}
+	}
 
 	// Cria uma resposta DHCP Acknowledge com espaço suficiente para conter todos os dados necessários
 	ack := make([]byte, 300)

@@ -5,39 +5,60 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"os"
+	"time"
 )
 
 func main() {
-	// Estabelecer conexão UDP com o servidor DHCP na porta 67
-	conn, err := net.Dial("udp", "dhcp_server:67")
-	if err != nil {
-		fmt.Printf("Erro ao conectar ao servidor DHCP: %v\n", err)
-		return
+	// Endereço do servidor DHCP (configurável; padrão = serviço do compose)
+	serverAddr := os.Getenv("DHCP_SERVER")
+	if serverAddr == "" {
+		serverAddr = "dhcp-server:67"
 	}
-	defer conn.Close()
 
-	// Construir e enviar uma mensagem DHCP Discover
+	// Construir a mensagem DHCP Discover uma vez
 	dhcpDiscoverMsg, err := buildDHCPDiscover()
 	if err != nil {
 		fmt.Printf("Erro ao construir mensagem DHCP Discover: %v\n", err)
 		return
 	}
 
-	_, err = conn.Write(dhcpDiscoverMsg)
-	if err != nil {
-		fmt.Printf("Erro ao enviar mensagem DHCP Discover: %v\n", err)
-		return
-	}
-
-	fmt.Println("Mensagem DHCP Discover enviada com sucesso")
-
-	// Aguardar e processar a resposta do servidor DHCP
+	// Conectar e obter a oferta, com retry enquanto o servidor sobe
+	var conn net.Conn
 	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Printf("Erro ao receber resposta DHCP: %v\n", err)
+	var n int
+	gotOffer := false
+	for attempt := 1; attempt <= 15; attempt++ {
+		conn, err = net.Dial("udp", serverAddr)
+		if err != nil {
+			fmt.Printf("Tentativa %d: erro ao conectar (%v)\n", attempt, err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		if _, err = conn.Write(dhcpDiscoverMsg); err != nil {
+			fmt.Printf("Tentativa %d: erro ao enviar Discover (%v)\n", attempt, err)
+			conn.Close()
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		fmt.Println("Mensagem DHCP Discover enviada com sucesso")
+		conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+		n, err = conn.Read(buffer)
+		if err != nil {
+			fmt.Printf("Tentativa %d: sem resposta do servidor (%v)\n", attempt, err)
+			conn.Close()
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		gotOffer = true
+		break
+	}
+	if !gotOffer {
+		fmt.Println("Não foi possível obter oferta do servidor DHCP")
 		return
 	}
+	defer conn.Close()
+	conn.SetReadDeadline(time.Time{}) // limpa deadline para as próximas leituras
 	_ = n
 
 	// Imprimir o buffer recebido

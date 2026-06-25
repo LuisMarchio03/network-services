@@ -17,7 +17,7 @@ const fs = require("fs"); // Ajuste o caminho se necessário
 require('./rabbitmq-elasticsearch')
 
 // String de conexão com o MongoDB
-const uri = 'mongodb://mongodb:27017/mydb';
+const uri = process.env.MONGO_URI ? `${process.env.MONGO_URI}/${process.env.MONGO_DB || 'mydb'}` : 'mongodb://mongodb:27017/mydb';
 
 const dataToInsert = {
     dhcpEntries: [
@@ -101,9 +101,12 @@ async function run() {
         // Conectando ao cliente MongoDB via Mongoose
         await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+        // Gera N registros DHCP como documentos reais (não string JSON)
+        const dhcpDocs = JSON.parse(DhcpJSON).concat(dataToInsert.dhcpEntries);
+
         // Inserindo os documentos nas coleções usando Mongoose
         await Promise.all([
-            ...dataToInsert.dhcpEntries.map(entry => createDocument(Dhcp, DhcpJSON)),
+            Dhcp.insertMany(dhcpDocs),
             ...dataToInsert.dnsEntries.map(entry => createDocument(Dns, entry)),
             ...dataToInsert.httpEntries.map(entry => createDocument(HttpServer, entry)),
             ...dataToInsert.ftpEntries.map(entry => createDocument(FtpServer, entry)),

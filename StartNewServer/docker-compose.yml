@@ -1,20 +1,28 @@
-version: '3.8'
+name: network-services
 
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:6
     container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
+    ports: ["27017:27017"]
+    volumes: ["mongodb_data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [net]
 
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq:3-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    ports: ["5672:5672", "${RABBITMQ_MGMT_PORT:-15672}:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [net]
 
   elasticsearch:
     image: elasticsearch:7.17.9
@@ -24,65 +32,119 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
       - http.host=0.0.0.0
-      - transport.host=127.0.0.1
-    ports:
-      - "9200:9200"
+    ports: ["${ES_PORT:-9200}:9200"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks: [net]
 
   kibana:
     image: kibana:7.17.9
     container_name: kibana
-    ports:
-      - "5601:5601"
+    ports: ["${KIBANA_PORT:-5601}:5601"]
     depends_on:
-      - elasticsearch
+      elasticsearch: {condition: service_healthy}
+    networks: [net]
 
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.17.24
-    container_name: filebeat
-    user: root
-    volumes:
-      - ./filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: >
-      filebeat -e --strict.perms=false
-      -E output.elasticsearch.hosts=["elasticsearch:9200"]
-
-  app:
-    build:
-      context: .
-    ports:
-      - "3000:3000"
+  seed:
+    build: { context: . }
+    environment:
+      - MONGO_URI=${MONGO_URI:-mongodb://mongodb:27017}
+      - MONGO_DB=${MONGO_DB:-mydb}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
     depends_on:
-      - mongodb
-      - rabbitmq
-      - elasticsearch
+      mongodb: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    networks: [net]
 
-  dhcp_server:
-    build:
-      context: ../pkg/dhcp_server
-      dockerfile: Dockerfile
-    container_name: dhcp_server_container
-    ports:
-      - "67:67"
+  logs-producer:
+    build: { context: ../pkg/logs-producer-teste }
+    environment:
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - PRODUCER_INTERVAL_SECONDS=${PRODUCER_INTERVAL_SECONDS:-5}
     depends_on:
-      - mongodb
-    restart: always
-    networks:
-      default: null
+      rabbitmq: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [net]
 
-  dhcp_client:
-    build:
-      context: ../pkg/dhcp_client
-      dockerfile: Dockerfile
-    container_name: dhcp_client_container
+  logs-receiver:
+    build: { context: ../pkg/logs-receiver }
+    environment:
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
     depends_on:
-      - dhcp_server
-    restart: always
-    networks:
-      default: null
+      rabbitmq: {condition: service_healthy}
+      elasticsearch: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [net]
+
+  dhcp-server:
+    build: { context: ../pkg/dhcp_server }
+    depends_on:
+      mongodb: {condition: service_healthy}
+      seed: {condition: service_completed_successfully}
+    restart: unless-stopped
+    networks: [net]
+
+  dhcp-client:
+    build: { context: ../pkg/dhcp_client }
+    depends_on: [dhcp-server]
+    networks: [net]
+
+  dns-server:
+    build: { context: ../pkg/dns-simulation-server }
+    environment:
+      - DNS_ZONES_FILE=/app/zones.json
+    networks: [net]
+
+  ntp-server:
+    build: { context: ../pkg/NTP }
+    networks: [net]
+
+  tcp-echo:
+    build: { context: ../pkg/TCP }
+    ports: ["${TCP_ECHO_PORT:-8888}:8888"]
+    networks: [net]
+
+  ftp-server:
+    build: { context: ../pkg/FTP }
+    command: ["/app/app", "ftp-server"]
+    ports: ["${FTP_PORT:-2121}:21"]
+    volumes: ["ftp_data:/data"]
+    networks: [net]
+
+  network-quiz:
+    build: { context: ../pkg/network-quiz }
+    ports: ["${QUIZ_PORT:-8080}:8080"]
+    networks: [net]
+
+  session-manager:
+    build: { context: ../pkg/session-manager-c, dockerfile: docker/Dockerfile }
+    profiles: ["extras"]
+    depends_on:
+      mongodb: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    networks: [net]
+
+  dns-client:
+    build: { context: ../pkg/dns-simulation-cliente }
+    profiles: ["clients"]
+    command: ["/app/app", "-domain", "example.com", "-server", "dns-server:53"]
+    networks: [net]
+
+  ntp-client:
+    build: { context: ../pkg/NTP, dockerfile: Dockerfile.client }
+    profiles: ["clients"]
+    command: ["/app/app", "-server", "ntp-server:123"]
+    networks: [net]
 
 volumes:
   mongodb_data:
+  ftp_data:
+
+networks:
+  net:
+    name: network-services-net
